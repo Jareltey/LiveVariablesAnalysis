@@ -40,6 +40,7 @@ public class Sigma {
         for (Local var : this.live_variables) {
             str.append(var).append(",");
         }
+        str.deleteCharAt(str.length()-1);
         return str + " }";
     }
 

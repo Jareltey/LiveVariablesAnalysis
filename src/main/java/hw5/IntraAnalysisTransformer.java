@@ -17,6 +17,7 @@ public class IntraAnalysisTransformer extends BodyTransformer {
 
     @Override
     protected void internalTransform(Body body, String phaseName, Map<String, String> options) {
+
         NormalUnitPrinter printer = new NormalUnitPrinter(body);
         LiveVariablesAnalysis analysis = new LiveVariablesAnalysis(new ExceptionalUnitGraph(body));
 
@@ -24,7 +25,7 @@ public class IntraAnalysisTransformer extends BodyTransformer {
         analysis.run();
 
         // Report warnings after analyzing
-//        analysis.reportWarnings();
+        analysis.reportWarnings();
 
         // Print abstract values for all variables at all program points
         // You can view this output by running `gradle test --info`

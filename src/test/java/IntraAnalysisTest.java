@@ -6,7 +6,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import soot.Main;
 import soot.PackManager;
+import soot.PhaseOptions;
 import soot.Transform;
+import soot.options.Options;
+import sun.jvm.hotspot.opto.Phase;
 
 public class IntraAnalysisTest extends AnalysisTest {
     void add_analysis() {
@@ -15,6 +18,7 @@ public class IntraAnalysisTest extends AnalysisTest {
                 new Transform(analysisName,
                         IntraAnalysisTransformer.getInstance())
         );
+        PhaseOptions.v().setPhaseOption("jb.ule", "enabled:false");
     }
 
     @Test
@@ -22,16 +26,26 @@ public class IntraAnalysisTest extends AnalysisTest {
         addTestClass("inputs.IntraTest");
         Main.main(getArgs());
 
-//        addExpected(ErrorMessage.POSSIBLE_EXCEED_ARRAY_LENGTH_WARNING, 16);
-//        addExpected(ErrorMessage.POSSIBLE_EXCEED_ARRAY_LENGTH_WARNING, 19);
-//        addExpected(ErrorMessage.EXCEED_ARRAY_LENGTH_ERROR, 31);
-//        addExpected(ErrorMessage.NEGATIVE_INDEX_ERROR, 33);
-//        addExpected(ErrorMessage.POSSIBLE_NEGATIVE_INDEX_WARNING, 57);
-//        addExpected(ErrorMessage.POSSIBLE_EXCEED_ARRAY_LENGTH_WARNING, 59);
-//        addExpected(ErrorMessage.EITHER_NEGATIVE_INDEX_OR_EXCEED_ARRAY_LENGTH_WARNING, 69);
-//        addExpected(ErrorMessage.POSSIBLE_EXCEED_ARRAY_LENGTH_WARNING, 83);
-//        addExpected(ErrorMessage.NEGATIVE_INDEX_ERROR, 94);
+        // VARIABLE_DEFINITION_WARNING -> appears once for each statement that defines a variable
+        // VARIABLE_DEFINITION_ERROR -> did not kill variable defined in sigma_out (wrong behaviour)
+        // VARIABLE_REFERENCED_WARNING -> appears once for each statement that references variable(s)
+        // VARIABLE_REFERENCED_ERROR -> did not gen variable(s) referenced in sigma_out (wrong behaviour)
+        // Thus we should expect many warnings (due to multiple definitions/references but no errors)
 
-//        Assert.assertEquals(expected, Utils.getErrors());
+        // test01
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 8);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 11);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 12);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 13);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 14);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 15);
+
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 12);
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 13);
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 14);
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 15);
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 16);
+
+        Assert.assertEquals(expected, Utils.getErrors());
     }
 }

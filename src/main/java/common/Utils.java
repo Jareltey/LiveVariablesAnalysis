@@ -41,18 +41,11 @@ public class Utils {
             System.out.print(" at line ");
             System.out.println(line);
         }
-        // An error overrides a warning.
-        if (message == ErrorMessage.NEGATIVE_INDEX_ERROR || message == ErrorMessage.EXCEED_ARRAY_LENGTH_ERROR) {
-            ErrorReport warning = new ErrorReport(ErrorMessage.POSSIBLE_NEGATIVE_INDEX_WARNING, line, name);
-            errors.remove(warning);
+        if (message == ErrorMessage.VARIABLE_DEFINITION_ERROR || message == ErrorMessage.VARIABLE_REFERENCED_ERROR) {
             errors.add(new ErrorReport(message, line, name));
         }
-        if (message == ErrorMessage.POSSIBLE_NEGATIVE_INDEX_WARNING || message == ErrorMessage.POSSIBLE_EXCEED_ARRAY_LENGTH_WARNING
-        || message == ErrorMessage.EITHER_NEGATIVE_INDEX_OR_EXCEED_ARRAY_LENGTH_WARNING) {
-            ErrorReport error = new ErrorReport(ErrorMessage.NEGATIVE_INDEX_ERROR, line, name);
-            ErrorReport error2 = new ErrorReport(ErrorMessage.EXCEED_ARRAY_LENGTH_ERROR, line, name);
-            if (!errors.contains(error) && !errors.contains(error2))
-                errors.add(new ErrorReport(message, line, name));
+        if (message == ErrorMessage.VARIABLE_DEFINITION_WARNING || message == ErrorMessage.VARIABLE_REFERENCED_WARNING) {
+            errors.add(new ErrorReport(message, line, name));
         }
 
     }

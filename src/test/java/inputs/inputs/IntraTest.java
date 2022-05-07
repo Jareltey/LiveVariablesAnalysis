@@ -2,36 +2,19 @@ package inputs;
 
 public class IntraTest {
 
-//    public static void test0() {
-//        double a,b,c;
-//        int ignore;
-//        int[] array = new int[5];
-//        a = 2.0; // a -> [2.0,2.0]
-//        b = 2.0; // b -> [2.0,2.0]
-//        c = a - b; // c -> [0.0,0.0]
-//        ignore = array[(int)c]; // OK
-//        while (c != b) {
-//            c += 1.0; // 1st iteration: c -> [1.0,1.0]
-//                      // 2nd iteration: c -> [1.0,+∞]
-//            ignore = array[(int)c]; // 1st iteration: OK
-//                                    // 2nd iteration: WARNING
-//        } // c -> [0.0,+∞]
-//        ignore = array[(int)c]; // WARNING
-//    }
-
-//    public static void test1() {
-//        double a,b,c,d,e;
-//        int ignore;
-//        int[] array = new int[5];
-//        a = 5.0; // a -> [5.0,5.0]
-//        b = 2.0; // b -> [2.0,2.0]
-//        c = a - b; // c -> [3.0,3.0]
-//        ignore = array[(int)c]; // OK
-//        d = b + c; // d -> [5.0,5.0]
-//        ignore = array[(int)d]; // ERROR
-//        e = b - a; // e -> [-3.0,-3.0]
-//        ignore = array[(int)e]; // ERROR
-//    }
+    public static int test1() {
+        int a,b,c,d,e;
+        int ignore;
+        int[] array = new int[5]; // sigma_out live variables -> {}
+        a = 5; // optimized away by copy propagation
+        b = 2; // optimized away by copy propagation
+        c = a - b; // sigma_out live variables -> {array} (copy propagation replaces a,b with constants)
+        ignore = array[(int)c]; // sigma_out live variables -> {array,c} (copy propagation replaces b with constant)
+        d = b + c; // sigma_out live variables -> {array,c} (copy propagation replaces b with constant)
+        ignore = array[(int)d]; // sigma_out live variables -> {array,c,d}
+        e = d - c; // sigma_out live variables -> {c,d}
+        return e; // sigma_out live variables -> {e}
+    }
 
 //    public static void test2() {
 //        double a,b,c,d,e;
@@ -69,30 +52,7 @@ public class IntraTest {
 //        ignore = array[(int)c]; // WARNING
 //    }
 
-    public static void test4() {
-        double a,b,c,d,e,f;
-        int ignore;
-        int[] array = new int[5];
-        a = 2.0; // a -> [2.0,2.0]
-        b = 6.0; // b -> [6.0,6.0]
-        if (condition()) {
-            c = b - a; // c -> [4.0,4.0]
-        } else {
-            c = b + a; // c -> [8.0,8.0]
-        } // c -> [4.0,8.0]
-        ignore = array[(int)c]; // WARNING
-        if (a > 0) {
-            d = a; // d -> [2.0,2.0]
-        } else {
-            d = b - a; // d -> [4.0,4.0]
-        } // d -> [2.0,4.0]
-        ignore = array[(int)d]; // OK
-        e = c / d; // e -> [1.0,4.0]
-        ignore = array[(int)e]; // OK
-        d -= 4.0; // d -> [-2.0,0.0]
-        f = c / d; // f -> [-∞,-2.0]
-        ignore = array[(int)f]; // ERROR
-    }
+
 
     public static int getInt() {
         return 0;

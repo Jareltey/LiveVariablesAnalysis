@@ -58,6 +58,57 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
         this.doAnalysis();
     }
 
+    protected void handle_referenced_var(Sigma sigmaBefore, Local var, Unit u) {
+        Utils.reportWarning(u, ErrorMessage.VARIABLE_REFERENCED_WARNING);
+        if (!sigmaBefore.live_variables.contains(var)) {
+            Utils.reportWarning(u, ErrorMessage.VARIABLE_REFERENCED_ERROR);
+        }
+    }
+
+    public void reportWarnings() {
+        for (Unit u : this.graph) {
+            Sigma sigmaBefore = this.getFlowBefore(u);
+            Stmt stmt = (Stmt) u;
+            if (stmt instanceof AssignStmt) {
+                AssignStmt assign_stmt = (AssignStmt) stmt;
+                Local var = (Local) assign_stmt.getLeftOp(); // should kill var in getflow Before
+                Utils.reportWarning(u, ErrorMessage.VARIABLE_DEFINITION_WARNING);
+                if (sigmaBefore.live_variables.contains(var)) {
+                    Utils.reportWarning(u, ErrorMessage.VARIABLE_DEFINITION_ERROR);
+                }
+                soot.Value expr = assign_stmt.getRightOp();
+                if (expr instanceof Local) {
+                    handle_referenced_var(sigmaBefore, (Local)expr, u);
+                } else if (expr instanceof BinopExpr) {
+                    BinopExpr binop = (BinopExpr)expr;
+                    soot.Value op1 = binop.getOp1();
+                    soot.Value op2 = binop.getOp2();
+                    if (op1 instanceof Local) {
+                        handle_referenced_var(sigmaBefore, (Local)op1, u);
+                    } else if (op2 instanceof Local) {
+                        handle_referenced_var(sigmaBefore, (Local)op2, u);
+                    }
+                } else if (expr instanceof ArrayRef) {
+                    ArrayRef arr_expr = (ArrayRef) expr;
+                    soot.Value index = arr_expr.getIndex();
+                    soot.Value base = arr_expr.getBase();
+                    if (index instanceof Local) {
+                        handle_referenced_var(sigmaBefore, (Local)index, u);
+                    } else if (base instanceof Local) {
+                        handle_referenced_var(sigmaBefore, (Local)base, u);
+                    }
+
+                }
+            } else if (stmt instanceof ReturnStmt) {
+                ReturnStmt ret_stmt = (ReturnStmt)stmt;
+                soot.Value ret_var = ret_stmt.getOp();
+                if (ret_var instanceof Local) {
+                    handle_referenced_var(sigmaBefore, (Local)ret_var, u);
+                }
+            }
+        }
+    }
+
     protected void kill(Sigma res, Local var) {
         res.live_variables.remove(var);
     }
@@ -82,7 +133,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
      *
      * @param inValue  The initial Sigma at this point
      * @param unit     The current Unit
-     * @param outValue The updated Sigma after the flow function
+     * @param outValue The updated Sigma Before the flow function
      */
     @Override
     protected void flowThrough(Sigma inValue, Unit unit, Sigma outValue) {
@@ -102,6 +153,16 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
                 soot.Value size = new_arr_expr.getSize();
                 if (size instanceof Local) {
                     gen(outValue, (Local)size);
+                }
+            } else if (expr instanceof ArrayRef) {
+                ArrayRef array_ref = (ArrayRef)expr;
+                soot.Value base = array_ref.getBase();
+                soot.Value index = array_ref.getIndex();
+                if (base instanceof Local) {
+                    gen(outValue, (Local)base);
+                }
+                if (index instanceof Local) {
+                    gen(outValue, (Local)index);
                 }
             }
         } else if (stmt instanceof IfStmt) {

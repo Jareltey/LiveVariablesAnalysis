@@ -1,11 +1,10 @@
 package common;
 
 public enum ErrorMessage {
-    NEGATIVE_INDEX_ERROR("negative array index"),
-    POSSIBLE_NEGATIVE_INDEX_WARNING("array index may be negative"),
-    EXCEED_ARRAY_LENGTH_ERROR("array index exceeds array length"),
-    POSSIBLE_EXCEED_ARRAY_LENGTH_WARNING("array index may exceed array length"),
-    EITHER_NEGATIVE_INDEX_OR_EXCEED_ARRAY_LENGTH_WARNING("array index may be negative or exceed array length");
+    VARIABLE_DEFINITION_WARNING("variable defined - should not be present in sigma_out"),
+    VARIABLE_DEFINITION_ERROR("variable defined but present in sigma_out"),
+    VARIABLE_REFERENCED_WARNING("variable referenced - should be present in sigma_out"),
+    VARIABLE_REFERENCED_ERROR("variable referenced but not present in sigma_out");
 
     ErrorMessage(String message) {
         this.errorMessage = message;
