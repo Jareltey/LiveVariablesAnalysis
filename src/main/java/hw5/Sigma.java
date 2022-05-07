@@ -12,60 +12,46 @@ import java.util.*;
  */
 public class Sigma {
     /**
-     * Abstract values
-     * Elements of lattice are Pair<Double,Double>
+     * Elements of lattice are subsets of VAR, where WAR is set of all local variables in program
      */
 
-    // Maps locals to abstract values
-    public Map<Local, Pair<Double,Double>> map;
+    public Set<Local> live_variables;
 
     /**
      * An empty sigma
      */
     public Sigma() {
-        this.map = new HashMap<>();
+        this.live_variables = new HashSet<>();
     }
 
     /**
      * An initialized sigma
-     * @param locals the locals at this point
-     * @param initialVal initial value to use
+     * @param locals live variables at this point
      */
-    public Sigma(Iterable<Local> locals, Pair<Double,Double> initialVal) {
-        this.map = new HashMap<>();
+    public Sigma(Iterable<Local> locals) {
+        this.live_variables = new HashSet<>();
         for (Local l : locals) {
-            this.map.put(l, initialVal);
+            this.live_variables.add(l);
         }
-    }
-
-    /**
-     * Join for two abstract values
-     */
-    public static Pair<Double,Double> join(Pair<Double,Double> v1, Pair<Double,Double> v2) {
-        Double min = Math.min(v1.getO1(), v2.getO1());
-        Double max = Math.max(v1.getO2(), v2.getO2());
-        Pair<Double,Double> res = new Pair<>(min,max);
-        return res;
     }
 
     public String toString() {
-        Set<Local> keys = map.keySet();
-        StringBuilder str = new StringBuilder("[ ");
-        for (Local key : keys) {
-            str.append(key.getName()).append(": ").append(map.get(key)).append("; ");
+        StringBuilder str = new StringBuilder("{ ");
+        for (Local var : this.live_variables) {
+            str.append(var).append(",");
         }
-        return str + " ]";
+        return str + " }";
     }
 
     public void copy(Sigma dest) {
-        dest.map = new HashMap<>(map);
+        dest.live_variables = new HashSet<>(live_variables);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {return false;}
         if (this == obj) {return true;}
-        return (obj instanceof Sigma) && (this.map.equals(((Sigma) obj).map));
+        return (obj instanceof Sigma) && (this.live_variables.equals(((Sigma) obj).live_variables));
     }
 
     @Override
