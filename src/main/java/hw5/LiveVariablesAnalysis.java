@@ -58,6 +58,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
         this.doAnalysis();
     }
 
+    // Helper function for reportWarnings
     protected void handle_referenced_var(Sigma sigmaBefore, Local var, Unit u) {
         Utils.reportWarning(u, ErrorMessage.VARIABLE_REFERENCED_WARNING);
         if (!sigmaBefore.live_variables.contains(var)) {
@@ -65,36 +66,38 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
         }
     }
 
+    // Raise warnings and errors for statements that define and reference variables
     public void reportWarnings() {
         for (Unit u : this.graph) {
+            // sigmaBefore corresponds to the state after applying the flow function since we are doing backwards analysis
             Sigma sigmaBefore = this.getFlowBefore(u);
             Stmt stmt = (Stmt) u;
             if (stmt instanceof AssignStmt) {
                 AssignStmt assign_stmt = (AssignStmt) stmt;
-                Local var = (Local) assign_stmt.getLeftOp(); // should kill var in getflow Before
+                Local var = (Local) assign_stmt.getLeftOp(); // should have killed var in sigmaBefore, otherwise raise error
                 Utils.reportWarning(u, ErrorMessage.VARIABLE_DEFINITION_WARNING);
                 if (sigmaBefore.live_variables.contains(var)) {
                     Utils.reportWarning(u, ErrorMessage.VARIABLE_DEFINITION_ERROR);
                 }
                 soot.Value expr = assign_stmt.getRightOp();
-                if (expr instanceof Local) {
+                if (expr instanceof Local) { // referencing expr, so should have gen-ed expr in sigmaBefore, otherwise raise error
                     handle_referenced_var(sigmaBefore, (Local)expr, u);
                 } else if (expr instanceof BinopExpr) {
                     BinopExpr binop = (BinopExpr)expr;
                     soot.Value op1 = binop.getOp1();
                     soot.Value op2 = binop.getOp2();
-                    if (op1 instanceof Local) {
+                    if (op1 instanceof Local) { // referencing op1, so should have gen-ed expr in sigmaBefore, otherwise raise error
                         handle_referenced_var(sigmaBefore, (Local)op1, u);
-                    } else if (op2 instanceof Local) {
+                    } else if (op2 instanceof Local) { // referencing op2, so should have gen-ed expr in sigmaBefore, otherwise raise error
                         handle_referenced_var(sigmaBefore, (Local)op2, u);
                     }
                 } else if (expr instanceof ArrayRef) {
                     ArrayRef arr_expr = (ArrayRef) expr;
                     soot.Value index = arr_expr.getIndex();
                     soot.Value base = arr_expr.getBase();
-                    if (index instanceof Local) {
+                    if (index instanceof Local) { // referencing index, so should have gen-ed expr in sigmaBefore, otherwise raise error
                         handle_referenced_var(sigmaBefore, (Local)index, u);
-                    } else if (base instanceof Local) {
+                    } else if (base instanceof Local) { // referencing base, so should have gen-ed expr in sigmaBefore, otherwise raise error
                         handle_referenced_var(sigmaBefore, (Local)base, u);
                     }
 
@@ -102,21 +105,34 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
             } else if (stmt instanceof ReturnStmt) {
                 ReturnStmt ret_stmt = (ReturnStmt)stmt;
                 soot.Value ret_var = ret_stmt.getOp();
-                if (ret_var instanceof Local) {
+                if (ret_var instanceof Local) { // referencing ret_var, so should have gen-ed expr in sigmaBefore, otherwise raise error
                     handle_referenced_var(sigmaBefore, (Local)ret_var, u);
+                }
+            } else if (stmt instanceof IfStmt) {
+                soot.Value condition = ((IfStmt)stmt).getCondition();
+                ConditionExpr cond_expr = (ConditionExpr)condition;
+                soot.Value op1 = cond_expr.getOp1();
+                soot.Value op2 = cond_expr.getOp2();
+                if (op1 instanceof Local) { // referencing op1, so should have gen-ed expr in sigmaBefore, otherwise raise error
+                    handle_referenced_var(sigmaBefore, (Local)op1, u);
+                } else if (op2 instanceof Local) { // referencing op2, so should have gen-ed expr in sigmaBefore, otherwise raise error
+                    handle_referenced_var(sigmaBefore, (Local)op2, u);
                 }
             }
         }
     }
 
+    // Helper function to kill variable that is defined
     protected void kill(Sigma res, Local var) {
         res.live_variables.remove(var);
     }
 
+    // Helper function to gen variable that is referenced
     protected void gen(Sigma res, Local var) {
         res.live_variables.add(var);
     }
 
+    // Helper function to handle binop expressions
     protected void handle_binop(Sigma res, BinopExpr expr) {
         soot.Value op1 = expr.getOp1();
         soot.Value op2 = expr.getOp2();
@@ -141,7 +157,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
         Stmt stmt = (Stmt) unit;
         if (stmt instanceof AssignStmt) {
             AssignStmt assign_stmt = (AssignStmt) stmt;
-            Local var = (Local) assign_stmt.getLeftOp();
+            Local var = (Local) assign_stmt.getLeftOp(); // killed var in sigmaBefore (outValue) since we are doing backwards analysis
             kill(outValue, var);
             soot.Value expr = assign_stmt.getRightOp();
             if (expr instanceof Local) {
@@ -191,6 +207,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
 
     /**
      * Initial flow information at the start of a method
+     * Start point refers to end of program (after return statement) for backwards analysis
+     * Should start with no live variables, hence sigma is initialized to empty set {}
      */
     @Override
     protected Sigma entryInitialFlow() {
@@ -203,6 +221,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<Unit, Sigma> {
 
     /**
      * Initial flow information at each other program point
+     * We initialize sigma at all other program points to bottom (i.e. {})
      */
     @Override
     protected Sigma newInitialFlow() {

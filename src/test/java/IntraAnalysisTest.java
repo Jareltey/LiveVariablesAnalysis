@@ -18,7 +18,6 @@ public class IntraAnalysisTest extends AnalysisTest {
                 new Transform(analysisName,
                         IntraAnalysisTransformer.getInstance())
         );
-        PhaseOptions.v().setPhaseOption("jb.ule", "enabled:false");
     }
 
     @Test
@@ -45,6 +44,20 @@ public class IntraAnalysisTest extends AnalysisTest {
         addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 14);
         addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 15);
         addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 16);
+
+        // test02
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 22);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 25);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 26);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 28);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 30);
+        addExpected(ErrorMessage.VARIABLE_DEFINITION_WARNING, 32);
+
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 27);
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 28);
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 30);
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 32);
+        addExpected(ErrorMessage.VARIABLE_REFERENCED_WARNING, 33);
 
         Assert.assertEquals(expected, Utils.getErrors());
     }
